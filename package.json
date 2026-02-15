@@ -16,7 +16,8 @@
     "inspect": "npx @modelcontextprotocol/inspector node build/index.js",
     "test": "cross-env SSH_MCP_DISABLE_MAIN=1 vitest --run",
     "test:watch": "cross-env SSH_MCP_DISABLE_MAIN=1 vitest",
-    "coverage": "cross-env SSH_MCP_DISABLE_MAIN=1 vitest --run --coverage"
+    "coverage": "cross-env SSH_MCP_DISABLE_MAIN=1 vitest --run --coverage",
+    "publish:release": "pwsh -File scripts/publish.ps1"
   },
   "files": [
     "build"

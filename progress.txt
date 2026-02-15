@@ -16,6 +16,8 @@
 - npm 包已发布到 `@xiaoyankonling/ssh-mcp@2.0.0`。
 - 已完成运维增强改动：profiles-test、错误上下文、握手重试、单次 timeoutMs 覆盖、README 更新。
 - 本地测试通过：`npm test` 64/64（需本地 SSH 测试容器 127.0.0.1:2222）。
+- 新增发布脚本 `scripts/publish.ps1` 与 `publish:release` 命令，避免 token 泄露并标准化发布流程。
+- 新增/更新 `AGENTS.md` 为中文仓库指南，补充发布与安全说明。
 
 进行中:
 - 等待用户验收与确认是否统一提交“仅配置模式 + 安全修复”改动。
