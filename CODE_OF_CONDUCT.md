@@ -8,6 +8,6 @@ Welcome! To keep our community positive and productive, please follow these simp
 - Keep discussions focused on the project.
 - Respect privacy—don't share others' private info.
 
-If you see behavior that goes against these rules, please report it to the maintainers.
+If you see behavior that goes against these rules, please report it by opening an issue in `Bianshumeng/ssh-mcp`.
 
 Let's build something great together! 

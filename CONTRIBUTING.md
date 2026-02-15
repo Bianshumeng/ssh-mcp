@@ -1,6 +1,6 @@
-# Contributing to ssh-mcp
+# Contributing to @xiaoyankonling/ssh-mcp
 
-Thank you for your interest in contributing to ssh-mcp! Your help is greatly appreciated. Please follow these guidelines to make the process smooth for everyone.
+Thank you for your interest in contributing to @xiaoyankonling/ssh-mcp! Your help is greatly appreciated. Please follow these guidelines to make the process smooth for everyone.
 
 ## How to Contribute
 
@@ -9,7 +9,7 @@ Thank you for your interest in contributing to ssh-mcp! Your help is greatly app
 3. **Create a descriptive branch name** (e.g., `feature/add-ssh-support` or `bugfix/fix-connection-issue`).
 4. **Make your changes** with clear, concise commits.
 5. **Test your changes** to ensure nothing is broken.
-6. **Push to your fork** and submit a Pull Request (PR) to the `main` branch.
+6. **Push to your fork** and submit a Pull Request (PR) to the `main` branch of `Bianshumeng/ssh-mcp`.
 
 ## Code Style
 - Follow the existing code style and conventions.
