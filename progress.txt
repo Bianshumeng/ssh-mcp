@@ -14,6 +14,8 @@
 - 完成安全修复：备份文件写入权限固定为 owner-only（POSIX 0600）。
 - 完成安全修复：删除无关 profile 时，持久化 activeProfile 不再受 `--profile` 启动覆盖干扰。
 - npm 包已发布到 `@xiaoyankonling/ssh-mcp@2.0.0`。
+- 已完成运维增强改动：profiles-test、错误上下文、握手重试、单次 timeoutMs 覆盖、README 更新。
+- 本地测试通过：`npm test` 64/64（需本地 SSH 测试容器 127.0.0.1:2222）。
 
 进行中:
 - 等待用户验收与确认是否统一提交“仅配置模式 + 安全修复”改动。
@@ -25,3 +27,4 @@
 
 已知问题:
 - `npm test` 全量中含大量 live SSH 集成用例，当前环境若未启动 127.0.0.1:2222 的测试 SSH 服务会失败。
+- `description.test.ts` 中与 SSH 执行相关用例在本机无测试 SSH 服务时会失败（ECONNREFUSED 127.0.0.1:2222）。

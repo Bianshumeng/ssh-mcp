@@ -25,10 +25,17 @@ export function registerExecTool(server: McpServer, deps: ExecToolDependencies):
     {
       command: z.string().describe('Shell command to execute on the remote SSH server'),
       description: z.string().optional().describe('Optional description of what this command will do'),
+      timeoutMs: z.number()
+        .int()
+        .positive()
+        .max(60 * 60 * 1000)
+        .optional()
+        .describe('Optional per-command timeout override in milliseconds'),
     },
-    async ({ command, description }) => {
+    async ({ command, description, timeoutMs }) => {
       const runtime = deps.getRuntimeOptions();
       const sanitizedCommand = sanitizeCommand(command, runtime.maxChars);
+      const effectiveTimeoutMs = timeoutMs ?? runtime.timeoutMs;
       try {
         const manager = await deps.getConnectionManager();
         await manager.ensureConnected();
@@ -47,7 +54,7 @@ export function registerExecTool(server: McpServer, deps: ExecToolDependencies):
         return await execSshCommandWithConnection(
           manager,
           appendDescription(sanitizedCommand, description),
-          runtime.timeoutMs,
+          effectiveTimeoutMs,
         );
       } catch (err: unknown) {
         if (err instanceof McpError) throw err;
@@ -56,4 +63,3 @@ export function registerExecTool(server: McpServer, deps: ExecToolDependencies):
     },
   );
 }
-

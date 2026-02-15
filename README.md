@@ -36,7 +36,7 @@
 - Execute shell commands on remote Linux and Windows systems
 - Secure authentication via password or SSH key
 - Local profile configuration via YAML/JSON files
-- Runtime profile management tools (`profiles-list/use/reload/note-update`)
+- Runtime profile management tools (`profiles-list/find/use/reload/note-update/profiles-test`)
 - Profile notes/tags for operational context
 - Built with TypeScript and the official MCP SDK
 - **Configurable timeout protection** with automatic process abortion
@@ -48,12 +48,14 @@
   - **Parameters:**
     - `command` (required): Shell command to execute on the remote SSH server
     - `description` (optional): Optional description of what this command will do (appended as a comment)
+    - `timeoutMs` (optional): Per-command timeout override in milliseconds
   - **Timeout Configuration:**
 
 - `sudo-exec`: Execute a shell command with sudo elevation
   - **Parameters:**
     - `command` (required): Shell command to execute as root using sudo
     - `description` (optional): Optional description of what this command will do (appended as a comment)
+    - `timeoutMs` (optional): Per-command timeout override in milliseconds
   - **Notes:**
     - Requires `--sudoPassword` to be set for password-protected sudo
     - Can be disabled by passing the `--disableSudo` flag at startup if sudo access is not needed or not available
@@ -70,6 +72,7 @@
 
 - `profiles-list`: List profile summaries (`id/name/host/port/note/tags/active`) with sensitive fields masked
 - `profiles-find`: Find profile candidates by keyword across `id/name/host/user/note/tags`
+- `profiles-test`: Test TCP connectivity, SSH handshake, and authentication for a profile
 - `profiles-use`: Switch active profile at runtime, persist `activeProfile`, and recreate SSH connection on next command
 - `profiles-reload`: Reload profile configuration from disk and validate active profile still exists
 - `profiles-create`: Create profile templates dynamically at runtime (note optional but recommended)
@@ -157,7 +160,9 @@ Notes:
    - by default, created profile is activated immediately
 2. Keep note short and precise:
    - if `note` is omitted, tool can derive a concise note from `contextSummary`
-3. Safe deletion (two-step):
+3. Validate target quickly:
+   - call `profiles-test` to verify TCP/SSH/auth before executing commands
+4. Safe deletion (two-step):
    - call `profiles-delete-prepare` first
    - review returned profile + backup path + confirmation text with user
    - only then call `profiles-delete-confirm`

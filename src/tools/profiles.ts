@@ -2,6 +2,8 @@ import type { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { ErrorCode, McpError } from '@modelcontextprotocol/sdk/types.js';
 import { z } from 'zod';
 import { ProfileManager, type ProfileCreateInput } from '../profile/profile-manager.js';
+import { buildSshConfigFromProfile } from '../ssh/ssh-config.js';
+import { testSshConnection } from '../ssh/connection-manager.js';
 import { asTextResult } from './result.js';
 
 export interface ProfileToolDependencies {
@@ -100,6 +102,41 @@ export function registerProfileTools(server: McpServer, deps: ProfileToolDepende
           query,
           activeProfile: deps.profileManager.getActiveProfileId(),
           matches: deps.profileManager.findProfiles(query),
+        });
+      } catch (err: unknown) {
+        throw toMcpError(err);
+      }
+    },
+  );
+
+  server.tool(
+    'profiles-test',
+    'Test TCP connectivity, SSH handshake, and authentication for a profile without executing commands.',
+    {
+      profileId: z.string().min(1).optional().describe('Optional profile id; defaults to current active profile'),
+      timeoutMs: z.number()
+        .int()
+        .positive()
+        .max(60 * 1000)
+        .optional()
+        .describe('Optional timeout per attempt in milliseconds (default 10000)'),
+      retries: z.number()
+        .int()
+        .min(0)
+        .max(5)
+        .optional()
+        .describe('Retry count for handshake/network failures (default 2)'),
+    },
+    async ({ profileId, timeoutMs, retries }) => {
+      try {
+        const profile = profileId
+          ? deps.profileManager.getProfileById(profileId)
+          : deps.profileManager.getActiveProfile();
+        const sshConfig = await buildSshConfigFromProfile(profile, deps.profileManager.getConfigPath());
+        const result = await testSshConnection(sshConfig, { timeoutMs, retries });
+        return asTextResult({
+          profileId: profile.id,
+          result,
         });
       } catch (err: unknown) {
         throw toMcpError(err);

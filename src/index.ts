@@ -1,6 +1,5 @@
 #!/usr/bin/env node
 
-import { readFile } from 'fs/promises';
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js';
 import { ErrorCode, McpError } from '@modelcontextprotocol/sdk/types.js';
@@ -12,13 +11,11 @@ import {
   type RuntimeOptions,
   type StartupMode,
 } from './cli/args.js';
-import { resolveKeyPath } from './config/loader.js';
 import { ProfileManager } from './profile/profile-manager.js';
 import {
   DEFAULT_MAX_CHARS,
   DEFAULT_TIMEOUT_MS,
   sanitizeCommand,
-  sanitizePassword,
 } from './ssh/command-utils.js';
 import {
   SSHConnectionManager,
@@ -26,6 +23,7 @@ import {
   execSshCommand,
   execSshCommandWithConnection,
 } from './ssh/connection-manager.js';
+import { buildSshConfigFromProfile } from './ssh/ssh-config.js';
 import { registerExecTool } from './tools/exec.js';
 import { registerProfileTools } from './tools/profiles.js';
 import { registerSudoExecTool } from './tools/sudo-exec.js';
@@ -37,7 +35,7 @@ const argvConfig: ArgvConfig = shouldBootServer ? parseArgv() : {};
 
 const server = new McpServer({
   name: 'SSH MCP Server',
-  version: '1.5.0',
+  version: '2.0.0',
   capabilities: {
     resources: {},
     tools: {},
@@ -72,27 +70,7 @@ async function buildSshConfig(mode: StartupMode): Promise<SSHConfig> {
   }
 
   const profile = profileManager.getActiveProfile();
-  const sshConfig: SSHConfig = {
-    host: profile.host,
-    port: profile.port,
-    username: profile.user,
-  };
-
-  if (profile.auth.type === 'password') {
-    sshConfig.password = sanitizePassword(profile.auth.password);
-  } else {
-    const keyPath = resolveKeyPath(profile.auth.keyPath, profileManager.getConfigPath());
-    sshConfig.privateKey = await readFile(keyPath, 'utf8');
-  }
-
-  if (profile.suPassword !== undefined) {
-    sshConfig.suPassword = sanitizePassword(profile.suPassword);
-  }
-  if (profile.sudoPassword !== undefined) {
-    sshConfig.sudoPassword = sanitizePassword(profile.sudoPassword);
-  }
-
-  return sshConfig;
+  return buildSshConfigFromProfile(profile, profileManager.getConfigPath());
 }
 
 async function getConnectionManager(): Promise<SSHConnectionManager> {

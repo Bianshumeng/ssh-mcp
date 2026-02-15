@@ -25,10 +25,17 @@ export function registerSudoExecTool(server: McpServer, deps: SudoExecToolDepend
     {
       command: z.string().describe('Shell command to execute with sudo on the remote SSH server'),
       description: z.string().optional().describe('Optional description of what this command will do'),
+      timeoutMs: z.number()
+        .int()
+        .positive()
+        .max(60 * 60 * 1000)
+        .optional()
+        .describe('Optional per-command timeout override in milliseconds'),
     },
-    async ({ command, description }) => {
+    async ({ command, description, timeoutMs }) => {
       const runtime = deps.getRuntimeOptions();
       const sanitizedCommand = sanitizeCommand(command, runtime.maxChars);
+      const effectiveTimeoutMs = timeoutMs ?? runtime.timeoutMs;
       try {
         const manager = await deps.getConnectionManager();
         await manager.ensureConnected();
@@ -44,7 +51,7 @@ export function registerSudoExecTool(server: McpServer, deps: SudoExecToolDepend
           wrapped = `printf '%s\\n' '${escapedPwd}' | sudo -p "" -S sh -c '${commandWithDescription.replace(/'/g, "'\\''")}'`;
         }
 
-        return await execSshCommandWithConnection(manager, wrapped, runtime.timeoutMs);
+        return await execSshCommandWithConnection(manager, wrapped, effectiveTimeoutMs);
       } catch (err: unknown) {
         if (err instanceof McpError) throw err;
         throw new McpError(ErrorCode.InternalError, `Unexpected error: ${(err as Error)?.message ?? err}`);
@@ -52,4 +59,3 @@ export function registerSudoExecTool(server: McpServer, deps: SudoExecToolDepend
     },
   );
 }
-

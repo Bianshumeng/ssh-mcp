@@ -10,7 +10,13 @@ beforeAll(() => {
   process.env.SSH_MCP_TEST = '1';
 });
 
-function runMcpCommand(command: string, description?: string, profileId = 'no-pass', toolName = 'exec'): Promise<any> {
+function runMcpCommand(
+  command: string,
+  description?: string,
+  profileId = 'no-pass',
+  toolName = 'exec',
+  timeoutMs?: number,
+): Promise<any> {
   const args = [
     testServerPath,
     `--config=${testConfigPath}`,
@@ -30,6 +36,9 @@ function runMcpCommand(command: string, description?: string, profileId = 'no-pa
     const toolArguments: any = { command };
     if (description !== undefined) {
       toolArguments.description = description;
+    }
+    if (timeoutMs !== undefined) {
+      toolArguments.timeoutMs = timeoutMs;
     }
     
     const initMsg = { jsonrpc: '2.0', id: 0, method: 'initialize', params: { capabilities: {}, clientInfo: { name: 't', version: '1' }, protocolVersion: '0.1.0' } };
@@ -95,5 +104,11 @@ describe('command description functionality', () => {
     const res = await runMcpCommand('pwd', '');
     expect(res.error).toBeUndefined();
     expect(res.result?.content?.[0]?.text).toBeTruthy();
+  });
+
+  it('should accept per-command timeout override', async () => {
+    const res = await runMcpCommand('echo "timeout override"', undefined, 'no-pass', 'exec', 60000);
+    expect(res.error).toBeUndefined();
+    expect(res.result?.content?.[0]?.text).toContain('timeout override');
   });
 });

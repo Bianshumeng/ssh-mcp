@@ -179,6 +179,10 @@ export class ProfileManager {
     return profile;
   }
 
+  getProfileById(profileId: string): ProfileDefinition {
+    return this.getProfile(profileId);
+  }
+
   getDefaults(): LoadedProfilesConfig['config']['defaults'] {
     const loaded = this.ensureLoaded();
     return loaded.config.defaults ?? {};
