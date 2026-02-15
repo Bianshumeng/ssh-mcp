@@ -1,0 +1,31 @@
+version: 1
+activeProfile: fi-template
+
+defaults:
+  timeout: 120000
+  maxChars: none
+  disableSudo: false
+
+profiles:
+  - id: fi-template
+    name: 芬兰模板机
+    host: "fi-template.example.com"
+    port: 9900
+    user: root
+    auth:
+      type: password
+      password: "${SSH_TEMPLATE_PASSWORD}"
+    sudoPassword: "${SSH_TEMPLATE_SUDO_PASSWORD}"
+    note: "模板维护机，做 cloud-init 和预装验证"
+    tags: [template, fi]
+
+  - id: jp-relay
+    name: 日本中转
+    host: "jp-relay.example.com"
+    port: 22
+    user: root
+    auth:
+      type: key
+      keyPath: "${SSH_HETZNER_KEY_PATH}"
+    note: "日本入口机，主要做转发与链路排障"
+    tags: [relay, jp]

@@ -21,6 +21,7 @@
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.17.5",
     "ssh2": "^1.17.0",
+    "yaml": "^2.8.2",
     "zod": "3.23.8"
   },
   "devDependencies": {

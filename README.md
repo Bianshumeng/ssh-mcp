@@ -35,6 +35,9 @@
 - MCP-compliant server exposing SSH capabilities
 - Execute shell commands on remote Linux and Windows systems
 - Secure authentication via password or SSH key
+- Local profile configuration via YAML/JSON files
+- Runtime profile management tools (`profiles-list/use/reload/note-update`)
+- Profile notes/tags for operational context
 - Built with TypeScript and the official MCP SDK
 - **Configurable timeout protection** with automatic process abortion
 - **Graceful timeout handling** - attempts to kill hanging processes before closing connections
@@ -65,6 +68,11 @@
     - Default: `1000`
     - No-limit mode: set `--maxChars=none` or any `<= 0` value (e.g. `--maxChars=0`)
 
+- `profiles-list`: List profile summaries (`id/name/host/port/note/tags/active`) with sensitive fields masked
+- `profiles-use`: Switch active profile at runtime and recreate the SSH connection on next command
+- `profiles-reload`: Reload profile configuration from disk and validate active profile still exists
+- `profiles-note-update`: Update and persist a profile note in the local config file
+
 ## Installation
 
 1. **Clone the repository:**
@@ -80,6 +88,8 @@
 ## Client Setup
 
 You can configure your IDE or LLM like Cursor, Windsurf, Claude Desktop to use this MCP Server.
+
+### Compatibility Mode (legacy, unchanged)
 
 **Required Parameters:**
 - `host`: Hostname or IP of the Linux or Windows server
@@ -117,6 +127,58 @@ You can configure your IDE or LLM like Cursor, Windsurf, Claude Desktop to use t
     }
 }
 ```
+
+### Profile Mode (new)
+
+Use `--config` to load multiple SSH profiles from a local YAML/JSON file.
+
+**New Parameters:**
+- `config`: Path to profile config file (`.yaml`, `.yml`, `.json`)
+- `profile`: Optional profile id override for startup active profile
+
+**Conflict rule:**
+- `--config` cannot be combined with legacy target args (`--host`, `--user`, `--password`, `--key`, etc.)
+- If both are supplied, startup fails with an explicit configuration error
+
+Example:
+
+```bash
+npx -y ssh-mcp -- --config=./examples/ssh-mcp.profiles.yaml --profile=jp-relay
+```
+
+### Profile Configuration Format
+
+The full example is available at `examples/ssh-mcp.profiles.yaml`.
+
+```yaml
+version: 1
+activeProfile: fi-template
+
+defaults:
+  timeout: 120000
+  maxChars: none
+  disableSudo: false
+
+profiles:
+  - id: fi-template
+    name: 芬兰模板机
+    host: fi-template.example.com
+    port: 9900
+    user: root
+    auth:
+      type: password
+      password: "${SSH_TEMPLATE_PASSWORD}"
+    sudoPassword: "${SSH_TEMPLATE_SUDO_PASSWORD}"
+    note: "模板维护机，做 cloud-init 和预装验证"
+    tags: [template, fi]
+```
+
+Notes:
+- `${ENV_VAR}` placeholders are expanded at load time
+- `auth.type=password` requires `auth.password`
+- `auth.type=key` requires `auth.keyPath` and the file must exist
+- `activeProfile` must match one of `profiles[].id`
+- Profile list output and tool responses never expose plaintext passwords
 
 ### Claude Code
 
