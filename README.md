@@ -1,15 +1,15 @@
 # SSH MCP Server
 
-[![NPM Version](https://img.shields.io/npm/v/ssh-mcp)](https://www.npmjs.com/package/ssh-mcp)
-[![Downloads](https://img.shields.io/npm/dm/ssh-mcp)](https://www.npmjs.com/package/ssh-mcp)
-[![Node Version](https://img.shields.io/node/v/ssh-mcp)](https://nodejs.org/)
-[![License](https://img.shields.io/github/license/tufantunc/ssh-mcp)](./LICENSE)
-[![GitHub Stars](https://img.shields.io/github/stars/tufantunc/ssh-mcp?style=social)](https://github.com/tufantunc/ssh-mcp/stargazers)
-[![GitHub Forks](https://img.shields.io/github/forks/tufantunc/ssh-mcp?style=social)](https://github.com/tufantunc/ssh-mcp/forks)
-[![Build Status](https://github.com/tufantunc/ssh-mcp/actions/workflows/publish.yml/badge.svg)](https://github.com/tufantunc/ssh-mcp/actions)
-[![GitHub issues](https://img.shields.io/github/issues/tufantunc/ssh-mcp)](https://github.com/tufantunc/ssh-mcp/issues)
+[![NPM Version](https://img.shields.io/npm/v/@xiaoyankonling/ssh-mcp)](https://www.npmjs.com/package/@xiaoyankonling/ssh-mcp)
+[![Downloads](https://img.shields.io/npm/dm/@xiaoyankonling/ssh-mcp)](https://www.npmjs.com/package/@xiaoyankonling/ssh-mcp)
+[![Node Version](https://img.shields.io/node/v/@xiaoyankonling/ssh-mcp)](https://nodejs.org/)
+[![License](https://img.shields.io/github/license/Bianshumeng/ssh-mcp)](./LICENSE)
+[![GitHub Stars](https://img.shields.io/github/stars/Bianshumeng/ssh-mcp?style=social)](https://github.com/Bianshumeng/ssh-mcp/stargazers)
+[![GitHub Forks](https://img.shields.io/github/forks/Bianshumeng/ssh-mcp?style=social)](https://github.com/Bianshumeng/ssh-mcp/forks)
+[![Build Status](https://github.com/Bianshumeng/ssh-mcp/actions/workflows/publish.yml/badge.svg)](https://github.com/Bianshumeng/ssh-mcp/actions)
+[![GitHub issues](https://img.shields.io/github/issues/Bianshumeng/ssh-mcp)](https://github.com/Bianshumeng/ssh-mcp/issues)
 
-[![Trust Score](https://archestra.ai/mcp-catalog/api/badge/quality/tufantunc/ssh-mcp)](https://archestra.ai/mcp-catalog/tufantunc__ssh-mcp)
+[![Trust Score](https://archestra.ai/mcp-catalog/api/badge/quality/Bianshumeng/ssh-mcp)](https://archestra.ai/mcp-catalog/Bianshumeng__ssh-mcp)
 
 **SSH MCP Server** is a local Model Context Protocol (MCP) server that exposes SSH control for Linux and Windows systems, enabling LLMs and other MCP clients to execute shell commands securely via SSH.
 
@@ -81,7 +81,7 @@
 
 1. **Clone the repository:**
    ```bash
-   git clone https://github.com/tufantunc/ssh-mcp.git
+  git clone https://github.com/Bianshumeng/ssh-mcp.git
    cd ssh-mcp
    ```
 2. **Install dependencies:**
@@ -113,7 +113,7 @@ Use `--config` to load multiple SSH profiles from a local YAML/JSON file.
 Example:
 
 ```bash
-npx -y ssh-mcp -- --config=./examples/ssh-mcp.profiles.yaml --profile=jp-relay
+npx -y @xiaoyankonling/ssh-mcp -- --config=./examples/ssh-mcp.profiles.yaml --profile=jp-relay
 ```
 
 ### Profile Configuration Format
@@ -177,29 +177,29 @@ You can add this MCP server to Claude Code using the `claude mcp add` command. T
 **Basic Installation:**
 
 ```bash
-claude mcp add --transport stdio ssh-mcp -- npx -y ssh-mcp -- --config=/path/to/ssh-mcp.profiles.yaml
+claude mcp add --transport stdio ssh-mcp -- npx -y @xiaoyankonling/ssh-mcp -- --config=/path/to/ssh-mcp.profiles.yaml
 ```
 
 **Installation Examples:**
 
 **With Config File:**
 ```bash
-claude mcp add --transport stdio ssh-mcp -- npx -y ssh-mcp -- --config=./examples/ssh-mcp.profiles.yaml
+claude mcp add --transport stdio ssh-mcp -- npx -y @xiaoyankonling/ssh-mcp -- --config=./examples/ssh-mcp.profiles.yaml
 ```
 
 **With Startup Profile Override:**
 ```bash
-claude mcp add --transport stdio ssh-mcp -- npx -y ssh-mcp -- --config=./examples/ssh-mcp.profiles.yaml --profile=jp-relay
+claude mcp add --transport stdio ssh-mcp -- npx -y @xiaoyankonling/ssh-mcp -- --config=./examples/ssh-mcp.profiles.yaml --profile=jp-relay
 ```
 
 **With Custom Timeout and No Character Limit:**
 ```bash
-claude mcp add --transport stdio ssh-mcp -- npx -y ssh-mcp -- --config=./examples/ssh-mcp.profiles.yaml --timeout=120000 --maxChars=none
+claude mcp add --transport stdio ssh-mcp -- npx -y @xiaoyankonling/ssh-mcp -- --config=./examples/ssh-mcp.profiles.yaml --timeout=120000 --maxChars=none
 ```
 
 **With Sudo Tool Disabled:**
 ```bash
-claude mcp add --transport stdio ssh-mcp -- npx -y ssh-mcp -- --config=./examples/ssh-mcp.profiles.yaml --disableSudo
+claude mcp add --transport stdio ssh-mcp -- npx -y @xiaoyankonling/ssh-mcp -- --config=./examples/ssh-mcp.profiles.yaml --disableSudo
 ```
 
 **Installation Scopes:**
@@ -208,17 +208,17 @@ You can specify the scope when adding the server:
 
 - **Local scope** (default): For personal use in the current project
   ```bash
-  claude mcp add --transport stdio ssh-mcp --scope local -- npx -y ssh-mcp -- --config=/path/to/ssh-mcp.profiles.yaml
+  claude mcp add --transport stdio ssh-mcp --scope local -- npx -y @xiaoyankonling/ssh-mcp -- --config=/path/to/ssh-mcp.profiles.yaml
   ```
 
 - **Project scope**: Share with your team via `.mcp.json` file
   ```bash
-  claude mcp add --transport stdio ssh-mcp --scope project -- npx -y ssh-mcp -- --config=./config/ssh-mcp.profiles.yaml
+  claude mcp add --transport stdio ssh-mcp --scope project -- npx -y @xiaoyankonling/ssh-mcp -- --config=./config/ssh-mcp.profiles.yaml
   ```
 
 - **User scope**: Available across all your projects
   ```bash
-  claude mcp add --transport stdio ssh-mcp --scope user -- npx -y ssh-mcp -- --config=/absolute/path/to/ssh-mcp.profiles.yaml
+  claude mcp add --transport stdio ssh-mcp --scope user -- npx -y @xiaoyankonling/ssh-mcp -- --config=/absolute/path/to/ssh-mcp.profiles.yaml
   ```
 
 
