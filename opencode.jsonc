@@ -7,10 +7,8 @@
       "command": [
         "node",
         "build/index.js",
-        "--host=127.0.0.1",
-        "--port=2222",
-        "--user=test",
-        "--password=secret",
+        "--config=test/fixtures/profiles.local.yaml",
+        "--profile=no-pass",
         "--timeout=60000"
       ],
       "enabled": true,

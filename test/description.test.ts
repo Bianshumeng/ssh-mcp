@@ -3,21 +3,19 @@ import { spawn } from 'child_process';
 import { join } from 'path';
 
 const testServerPath = join(process.cwd(), 'build', 'index.js');
+const testConfigPath = join(process.cwd(), 'test', 'fixtures', 'profiles.local.yaml');
 const START_TIMEOUT = 10000;
 
 beforeAll(() => {
   process.env.SSH_MCP_TEST = '1';
 });
 
-function runMcpCommand(command: string, description?: string, extraArgs: string[] = [], toolName = 'exec'): Promise<any> {
+function runMcpCommand(command: string, description?: string, profileId = 'no-pass', toolName = 'exec'): Promise<any> {
   const args = [
     testServerPath,
-    '--host=127.0.0.1',
-    '--port=2222',
-    '--user=test',
-    '--password=secret',
+    `--config=${testConfigPath}`,
+    `--profile=${profileId}`,
     '--timeout=60000',
-    ...extraArgs,
   ];
 
   return new Promise((resolve, reject) => {
@@ -88,7 +86,7 @@ describe('command description functionality', () => {
   });
 
   it('should work with sudo-exec tool and description', async () => {
-    const res = await runMcpCommand('whoami', 'Check current user identity', ['--sudoPassword=secret'], 'sudo-exec');
+    const res = await runMcpCommand('whoami', 'Check current user identity', 'sudo-secret', 'sudo-exec');
     expect(res.error).toBeUndefined();
     // Should execute successfully with sudo
   });

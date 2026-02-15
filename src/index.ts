@@ -8,7 +8,6 @@ import {
   determineStartupMode,
   parseArgv,
   resolveRuntimeOptions,
-  validateConfig,
   type ArgvConfig,
   type RuntimeOptions,
   type StartupMode,
@@ -55,7 +54,7 @@ let initialRuntimeOptions: RuntimeOptions = {
 };
 
 function getRuntimeOptions(): RuntimeOptions {
-  if (startupMode?.mode === 'profile' && profileManager) {
+  if (profileManager) {
     return resolveRuntimeOptions(argvConfig, profileManager.getDefaults());
   }
   return initialRuntimeOptions;
@@ -68,29 +67,6 @@ async function closeConnectionManager(): Promise<void> {
 }
 
 async function buildSshConfig(mode: StartupMode): Promise<SSHConfig> {
-  if (mode.mode === 'legacy') {
-    const legacy = mode.legacy;
-    const sshConfig: SSHConfig = {
-      host: legacy.host,
-      port: legacy.port,
-      username: legacy.user,
-    };
-
-    if (legacy.password) {
-      sshConfig.password = legacy.password;
-    } else if (legacy.key) {
-      sshConfig.privateKey = await readFile(legacy.key, 'utf8');
-    }
-
-    if (legacy.suPassword !== undefined && legacy.suPassword !== null) {
-      sshConfig.suPassword = sanitizePassword(legacy.suPassword);
-    }
-    if (legacy.sudoPassword !== undefined && legacy.sudoPassword !== null) {
-      sshConfig.sudoPassword = sanitizePassword(legacy.sudoPassword);
-    }
-    return sshConfig;
-  }
-
   if (!profileManager) {
     throw new McpError(ErrorCode.InternalError, 'Profile mode not initialized');
   }
@@ -134,13 +110,9 @@ async function getConnectionManager(): Promise<SSHConnectionManager> {
 
 async function initializeRuntime(): Promise<void> {
   startupMode = determineStartupMode(argvConfig);
-  if (startupMode.mode === 'profile') {
-    profileManager = new ProfileManager(startupMode.configPath, startupMode.profileIdOverride);
-    await profileManager.initialize();
-    initialRuntimeOptions = resolveRuntimeOptions(argvConfig, profileManager.getDefaults());
-  } else {
-    initialRuntimeOptions = startupMode.runtime;
-  }
+  profileManager = new ProfileManager(startupMode.configPath, startupMode.profileIdOverride);
+  await profileManager.initialize();
+  initialRuntimeOptions = resolveRuntimeOptions(argvConfig, profileManager.getDefaults());
 }
 
 function registerTools(): void {
@@ -209,10 +181,8 @@ if (isTestMode) {
 
 export {
   parseArgv,
-  validateConfig,
   sanitizeCommand,
   SSHConnectionManager,
   execSshCommandWithConnection,
   execSshCommand,
 };
-

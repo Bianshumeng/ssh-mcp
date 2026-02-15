@@ -90,6 +90,17 @@ async function validateProfileAuthFields(config: ProfilesConfig, filePath: strin
   }
 }
 
+export async function validateRawProfilesConfig(
+  rawConfig: Record<string, unknown>,
+  filePath: string,
+): Promise<ProfilesConfig> {
+  const expandedConfig = expandEnv(deepClone(rawConfig));
+  const parsedConfig = profilesConfigSchema.parse(expandedConfig);
+  ensureActiveProfileExists(parsedConfig);
+  await validateProfileAuthFields(parsedConfig, filePath);
+  return parsedConfig;
+}
+
 function parseRawContent(content: string, format: 'yaml' | 'json'): Record<string, unknown> {
   if (format === 'json') {
     const parsed = JSON.parse(content);
@@ -105,10 +116,7 @@ export async function loadProfilesConfig(filePath: string): Promise<LoadedProfil
   const format = inferFormat(filePath);
   const content = await readFile(filePath, 'utf8');
   const rawConfig = parseRawContent(content, format);
-  const expandedConfig = expandEnv(deepClone(rawConfig));
-  const parsedConfig = profilesConfigSchema.parse(expandedConfig);
-  ensureActiveProfileExists(parsedConfig);
-  await validateProfileAuthFields(parsedConfig, filePath);
+  const parsedConfig = await validateRawProfilesConfig(rawConfig, filePath);
 
   return {
     filePath,
@@ -150,4 +158,3 @@ export function profileSummary(profile: ProfileDefinition, activeProfileId: stri
     active: profile.id === activeProfileId,
   };
 }
-

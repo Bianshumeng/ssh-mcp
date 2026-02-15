@@ -4,14 +4,13 @@ import { join } from 'path';
 
 describe('maxChars CLI configuration', () => {
   const testServerPath = join(process.cwd(), 'build', 'index.js');
+  const testConfigPath = join(process.cwd(), 'test', 'fixtures', 'profiles.local.yaml');
   
   describe('default behavior (1000 chars)', () => {
     it('should reject commands over 1000 characters by default', () => {
       const longCommand = 'echo ' + 'x'.repeat(1000);
       const args = [
-        '--host=127.0.0.1',
-        '--user=test',
-        '--password=secret',
+        `--config=${testConfigPath}`,
         '--timeout=5000'
       ];
       
@@ -52,9 +51,7 @@ describe('maxChars CLI configuration', () => {
     it('should respect custom positive limit', () => {
       const longCommand = 'echo ' + 'x'.repeat(50);
       const args = [
-        '--host=127.0.0.1',
-        '--user=test',
-        '--password=secret',
+        `--config=${testConfigPath}`,
         '--timeout=5000',
         '--maxChars=50'
       ];
@@ -95,9 +92,7 @@ describe('maxChars CLI configuration', () => {
     it('should allow unlimited characters with maxChars=none', () => {
       const veryLongCommand = 'echo ' + 'x'.repeat(10000);
       const args = [
-        '--host=127.0.0.1',
-        '--user=test',
-        '--password=secret',
+        `--config=${testConfigPath}`,
         '--timeout=5000',
         '--maxChars=none'
       ];
@@ -137,9 +132,7 @@ describe('maxChars CLI configuration', () => {
     it('should allow unlimited characters with maxChars=0', () => {
       const veryLongCommand = 'echo ' + 'x'.repeat(10000);
       const args = [
-        '--host=127.0.0.1',
-        '--user=test',
-        '--password=secret',
+        `--config=${testConfigPath}`,
         '--timeout=5000',
         '--maxChars=0'
       ];
@@ -181,9 +174,7 @@ describe('maxChars CLI configuration', () => {
     it('should fall back to default for invalid string values', () => {
       const longCommand = 'echo ' + 'x'.repeat(1000);
       const args = [
-        '--host=127.0.0.1',
-        '--user=test',
-        '--password=secret',
+        `--config=${testConfigPath}`,
         '--timeout=5000',
         '--maxChars=invalid'
       ];

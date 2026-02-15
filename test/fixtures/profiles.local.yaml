@@ -1,0 +1,51 @@
+version: 1
+activeProfile: no-pass
+
+profiles:
+  - id: no-pass
+    name: Local No Sudo Password
+    host: 127.0.0.1
+    port: 2222
+    user: test
+    auth:
+      type: password
+      password: secret
+    note: "local test profile without sudo password"
+    tags: [local, test]
+
+  - id: sudo-secret
+    name: Local With Sudo Password
+    host: 127.0.0.1
+    port: 2222
+    user: test
+    auth:
+      type: password
+      password: secret
+    sudoPassword: secret
+    note: "local test profile with correct sudo password"
+    tags: [local, sudo]
+
+  - id: sudo-wrong
+    name: Local Wrong Sudo Password
+    host: 127.0.0.1
+    port: 2222
+    user: test
+    auth:
+      type: password
+      password: secret
+    sudoPassword: wrongpass
+    note: "local test profile with wrong sudo password"
+    tags: [local, sudo, wrong]
+
+  - id: su-secret
+    name: Local With Su Password
+    host: 127.0.0.1
+    port: 2222
+    user: test
+    auth:
+      type: password
+      password: secret
+    suPassword: secret
+    note: "local test profile with su password"
+    tags: [local, su]
+

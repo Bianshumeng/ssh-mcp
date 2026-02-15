@@ -2,36 +2,30 @@ import path from 'path';
 import { DEFAULT_MAX_CHARS, DEFAULT_TIMEOUT_MS, parseMaxChars } from '../ssh/command-utils.js';
 import { type ProfileDefaults } from '../config/types.js';
 
-export interface LegacyCliConfig {
-  host: string;
-  port: number;
-  user: string;
-  password?: string;
-  key?: string;
-  suPassword?: string;
-  sudoPassword?: string;
-}
-
 export interface RuntimeOptions {
   timeoutMs: number;
   maxChars: number;
   disableSudo: boolean;
 }
 
-export type StartupMode =
-  | {
-    mode: 'legacy';
-    legacy: LegacyCliConfig;
-    runtime: RuntimeOptions;
-  }
-  | {
-    mode: 'profile';
-    configPath: string;
-    profileIdOverride?: string;
-    runtime: RuntimeOptions;
-  };
+export interface StartupMode {
+  mode: 'profile';
+  configPath: string;
+  profileIdOverride?: string;
+  runtime: RuntimeOptions;
+}
 
 export type ArgvConfig = Record<string, string | null | undefined>;
+
+const LEGACY_ARG_KEYS = [
+  'host',
+  'user',
+  'port',
+  'password',
+  'key',
+  'suPassword',
+  'sudoPassword',
+] as const;
 
 export function parseArgv(argv = process.argv.slice(2)): ArgvConfig {
   const config: ArgvConfig = {};
@@ -48,7 +42,9 @@ export function parseArgv(argv = process.argv.slice(2)): ArgvConfig {
 }
 
 function normalizeOptionalString(value: string | null | undefined): string | undefined {
-  return typeof value === 'string' ? value : undefined;
+  if (typeof value !== 'string') return undefined;
+  const trimmed = value.trim();
+  return trimmed.length > 0 ? trimmed : undefined;
 }
 
 function parsePositiveInt(input: string | null | undefined, fallback: number): number {
@@ -59,24 +55,19 @@ function parsePositiveInt(input: string | null | undefined, fallback: number): n
 }
 
 function hasLegacyTargetArgs(config: ArgvConfig): boolean {
-  return [
-    'host',
-    'user',
-    'port',
-    'password',
-    'key',
-    'suPassword',
-    'sudoPassword',
-  ].some((key) => config[key] !== undefined);
+  return LEGACY_ARG_KEYS.some((key) => config[key] !== undefined);
 }
 
 export function validateConfig(config: ArgvConfig): void {
-  const errors: string[] = [];
-  if (!config.host) errors.push('Missing required --host');
-  if (!config.user) errors.push('Missing required --user');
-  if (config.port && Number.isNaN(Number(config.port))) errors.push('Invalid --port');
-  if (errors.length > 0) {
-    throw new Error(`Configuration error:\n${errors.join('\n')}`);
+  const configPath = normalizeOptionalString(config.config as string | null | undefined);
+  if (!configPath) {
+    throw new Error('Configuration error:\nMissing required --config=<path>. Legacy --host/--user startup is no longer supported.');
+  }
+
+  if (hasLegacyTargetArgs(config)) {
+    throw new Error(
+      'Configuration error:\nLegacy target args (--host/--user/--password/--key/...) are no longer supported. Use --config and manage targets via profiles tools.',
+    );
   }
 }
 
@@ -101,39 +92,16 @@ export function resolveRuntimeOptions(config: ArgvConfig, defaults?: ProfileDefa
 }
 
 export function determineStartupMode(config: ArgvConfig): StartupMode {
-  const configPathRaw = normalizeOptionalString(config.config as string | null | undefined);
-  const hasConfigMode = typeof configPathRaw === 'string' && configPathRaw.trim() !== '';
-  const hasLegacyArgs = hasLegacyTargetArgs(config);
-
-  if (hasConfigMode && hasLegacyArgs) {
-    throw new Error('Configuration error:\nCannot combine --config with legacy target args (--host/--user/--password/--key/...)');
-  }
-
-  if (!hasConfigMode && normalizeOptionalString(config.profile as string | null | undefined)) {
-    throw new Error('Configuration error:\n--profile can only be used together with --config');
-  }
-
-  if (hasConfigMode) {
-    return {
-      mode: 'profile',
-      configPath: path.resolve(configPathRaw as string),
-      profileIdOverride: normalizeOptionalString(config.profile as string | null | undefined),
-      runtime: resolveRuntimeOptions(config),
-    };
-  }
-
   validateConfig(config);
+
+  const configPath = normalizeOptionalString(config.config as string | null | undefined) as string;
+  const profileIdOverride = normalizeOptionalString(config.profile as string | null | undefined);
+
   return {
-    mode: 'legacy',
-    legacy: {
-      host: config.host as string,
-      port: parsePositiveInt(config.port as string | undefined, 22),
-      user: config.user as string,
-      password: normalizeOptionalString(config.password as string | null | undefined),
-      key: normalizeOptionalString(config.key as string | null | undefined),
-      suPassword: normalizeOptionalString(config.suPassword as string | null | undefined),
-      sudoPassword: normalizeOptionalString(config.sudoPassword as string | null | undefined),
-    },
+    mode: 'profile',
+    configPath: path.resolve(configPath),
+    profileIdOverride,
     runtime: resolveRuntimeOptions(config),
   };
 }
+

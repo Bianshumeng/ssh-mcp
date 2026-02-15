@@ -69,9 +69,13 @@
     - No-limit mode: set `--maxChars=none` or any `<= 0` value (e.g. `--maxChars=0`)
 
 - `profiles-list`: List profile summaries (`id/name/host/port/note/tags/active`) with sensitive fields masked
-- `profiles-use`: Switch active profile at runtime and recreate the SSH connection on next command
+- `profiles-find`: Find profile candidates by keyword across `id/name/host/user/note/tags`
+- `profiles-use`: Switch active profile at runtime, persist `activeProfile`, and recreate SSH connection on next command
 - `profiles-reload`: Reload profile configuration from disk and validate active profile still exists
-- `profiles-note-update`: Update and persist a profile note in the local config file
+- `profiles-create`: Create profile templates dynamically at runtime (note optional but recommended)
+- `profiles-note-update`: Update and persist a concise profile note
+- `profiles-delete-prepare`: Prepare destructive deletion (creates backup and returns confirmation payload)
+- `profiles-delete-confirm`: Finalize deletion with exact `deleteRequestId + confirmationText`
 
 ## Installation
 
@@ -89,56 +93,22 @@
 
 You can configure your IDE or LLM like Cursor, Windsurf, Claude Desktop to use this MCP Server.
 
-### Compatibility Mode (legacy, unchanged)
+### Profile Mode
 
-**Required Parameters:**
-- `host`: Hostname or IP of the Linux or Windows server
-- `user`: SSH username
-
-**Optional Parameters:**
-- `port`: SSH port (default: 22)
-- `password`: SSH password (or use `key` for key-based auth)
-- `key`: Path to private SSH key
-- `sudoPassword`: Password for sudo elevation (when executing commands with sudo)
-- `suPassword`: Password for su elevation (when you need a persistent root shell)
-- `timeout`: Command execution timeout in milliseconds (default: 60000ms = 1 minute)
-- `maxChars`: Maximum allowed characters for the `command` input (default: 1000). Use `none` or `0` to disable the limit.
-- `disableSudo`: Flag to disable the `sudo-exec` tool completely. Useful when sudo access is not needed or not available.
-
-
-```commandline
-{
-    "mcpServers": {
-        "ssh-mcp": {
-            "command": "npx",
-            "args": [
-                "ssh-mcp",
-                "-y",
-                "--",
-                "--host=1.2.3.4",
-                "--port=22",
-                "--user=root",
-                "--password=pass",
-                "--key=path/to/key",
-                "--timeout=30000",
-                "--maxChars=none"
-            ]
-        }
-    }
-}
-```
-
-### Profile Mode (new)
+This server now runs in profile mode only.
 
 Use `--config` to load multiple SSH profiles from a local YAML/JSON file.
 
-**New Parameters:**
+**Parameters:**
 - `config`: Path to profile config file (`.yaml`, `.yml`, `.json`)
 - `profile`: Optional profile id override for startup active profile
+- `timeout`: Optional command timeout override in milliseconds
+- `maxChars`: Optional command length override
+- `disableSudo`: Optional flag to disable `sudo-exec`
 
-**Conflict rule:**
-- `--config` cannot be combined with legacy target args (`--host`, `--user`, `--password`, `--key`, etc.)
-- If both are supplied, startup fails with an explicit configuration error
+**Important:**
+- Legacy startup args (`--host`, `--user`, `--password`, `--key`, etc.) are no longer supported.
+- Dynamic target management is done through profile tools (`profiles-list/find/use/create/delete-*`).
 
 Example:
 
@@ -180,6 +150,26 @@ Notes:
 - `activeProfile` must match one of `profiles[].id`
 - Profile list output and tool responses never expose plaintext passwords
 
+### Dynamic Template Management Workflow
+
+1. Create template at runtime:
+   - call `profiles-create`
+   - by default, created profile is activated immediately
+2. Keep note short and precise:
+   - if `note` is omitted, tool can derive a concise note from `contextSummary`
+3. Safe deletion (two-step):
+   - call `profiles-delete-prepare` first
+   - review returned profile + backup path + confirmation text with user
+   - only then call `profiles-delete-confirm`
+
+`profiles-delete-confirm` requires exact confirmation text in the form:
+
+```text
+DELETE <profileId>
+```
+
+This guards against accidental profile removal and ensures a backup exists before delete.
+
 ### Claude Code
 
 You can add this MCP server to Claude Code using the `claude mcp add` command. This is the recommended method for Claude Code.
@@ -187,29 +177,29 @@ You can add this MCP server to Claude Code using the `claude mcp add` command. T
 **Basic Installation:**
 
 ```bash
-claude mcp add --transport stdio ssh-mcp -- npx -y ssh-mcp -- --host=YOUR_HOST --user=YOUR_USER --password=YOUR_PASSWORD
+claude mcp add --transport stdio ssh-mcp -- npx -y ssh-mcp -- --config=/path/to/ssh-mcp.profiles.yaml
 ```
 
 **Installation Examples:**
 
-**With Password Authentication:**
+**With Config File:**
 ```bash
-claude mcp add --transport stdio ssh-mcp -- npx -y ssh-mcp -- --host=192.168.1.100 --port=22 --user=admin --password=your_password
+claude mcp add --transport stdio ssh-mcp -- npx -y ssh-mcp -- --config=./examples/ssh-mcp.profiles.yaml
 ```
 
-**With SSH Key Authentication:**
+**With Startup Profile Override:**
 ```bash
-claude mcp add --transport stdio ssh-mcp -- npx -y ssh-mcp -- --host=example.com --user=root --key=/path/to/private/key
+claude mcp add --transport stdio ssh-mcp -- npx -y ssh-mcp -- --config=./examples/ssh-mcp.profiles.yaml --profile=jp-relay
 ```
 
 **With Custom Timeout and No Character Limit:**
 ```bash
-claude mcp add --transport stdio ssh-mcp -- npx -y ssh-mcp -- --host=192.168.1.100 --user=admin --password=your_password --timeout=120000 --maxChars=none
+claude mcp add --transport stdio ssh-mcp -- npx -y ssh-mcp -- --config=./examples/ssh-mcp.profiles.yaml --timeout=120000 --maxChars=none
 ```
 
-**With Sudo and Su Support:**
+**With Sudo Tool Disabled:**
 ```bash
-claude mcp add --transport stdio ssh-mcp -- npx -y ssh-mcp -- --host=192.168.1.100 --user=admin --password=your_password --sudoPassword=sudo_pass --suPassword=root_pass
+claude mcp add --transport stdio ssh-mcp -- npx -y ssh-mcp -- --config=./examples/ssh-mcp.profiles.yaml --disableSudo
 ```
 
 **Installation Scopes:**
@@ -218,17 +208,17 @@ You can specify the scope when adding the server:
 
 - **Local scope** (default): For personal use in the current project
   ```bash
-  claude mcp add --transport stdio ssh-mcp --scope local -- npx -y ssh-mcp -- --host=YOUR_HOST --user=YOUR_USER --password=YOUR_PASSWORD
+  claude mcp add --transport stdio ssh-mcp --scope local -- npx -y ssh-mcp -- --config=/path/to/ssh-mcp.profiles.yaml
   ```
 
 - **Project scope**: Share with your team via `.mcp.json` file
   ```bash
-  claude mcp add --transport stdio ssh-mcp --scope project -- npx -y ssh-mcp -- --host=YOUR_HOST --user=YOUR_USER --password=YOUR_PASSWORD
+  claude mcp add --transport stdio ssh-mcp --scope project -- npx -y ssh-mcp -- --config=./config/ssh-mcp.profiles.yaml
   ```
 
 - **User scope**: Available across all your projects
   ```bash
-  claude mcp add --transport stdio ssh-mcp --scope user -- npx -y ssh-mcp -- --host=YOUR_HOST --user=YOUR_USER --password=YOUR_PASSWORD
+  claude mcp add --transport stdio ssh-mcp --scope user -- npx -y ssh-mcp -- --config=/absolute/path/to/ssh-mcp.profiles.yaml
   ```
 
 

@@ -8,21 +8,19 @@ import { join } from 'path';
 // the sudo-exec tool and assert the returned JSON-RPC response.
 
 const testServerPath = join(process.cwd(), 'build', 'index.js');
+const testConfigPath = join(process.cwd(), 'test', 'fixtures', 'profiles.local.yaml');
 const START_TIMEOUT = 10000;  // 10 seconds for server startup with su elevation
 
 beforeAll(() => {
   process.env.SSH_MCP_TEST = '1';
 });
 
-function runMcpCommand(command: string, extraArgs: string[] = [], toolName = 'sudo-exec'): Promise<any> {
+function runMcpCommand(command: string, profileId = 'no-pass', toolName = 'sudo-exec'): Promise<any> {
   const args = [
     testServerPath,
-    '--host=127.0.0.1',
-    '--port=2222',
-    '--user=test',
-    '--password=secret',
+    `--config=${testConfigPath}`,
+    `--profile=${profileId}`,
     '--timeout=60000',
-    ...extraArgs,
   ];
 
   return new Promise((resolve, reject) => {
@@ -69,45 +67,45 @@ function runMcpCommand(command: string, extraArgs: string[] = [], toolName = 'su
 
 // Helper that runs a command using the server's `--suPassword` option.
 // It establishes an elevated su session at connection time so all commands run as root.
-function runSuMcpCommand(command: string, suPassword = 'secret', extraArgs: string[] = []): Promise<any> {
-  return runMcpCommand(command, [`--suPassword=${suPassword}`, ...extraArgs], 'exec');
+function runSuMcpCommand(command: string): Promise<any> {
+  return runMcpCommand(command, 'su-secret', 'exec');
 }
 
 describe('sudo-exec tool authentication', () => {
   // Set up the su environment before running tests that need it
   beforeAll(async () => {
     // First make su setuid root
-    const suSetup = await runMcpCommand('chmod u+s /bin/su', ['--sudoPassword=secret']);
+    const suSetup = await runMcpCommand('chmod u+s /bin/su', 'sudo-secret');
     expect(suSetup.error).toBeUndefined();
 
     // Then set the root password to 'secret'
-    const passwdSetup = await runMcpCommand('echo "secret" | passwd --stdin', ['--sudoPassword=secret']);
+    const passwdSetup = await runMcpCommand('echo "secret" | passwd --stdin', 'sudo-secret');
     expect(passwdSetup.error).toBeUndefined();
   });
 
   it('should execute commands with su elevation after sudo setup', async () => {
     // First verify we can use su now by checking if we can become root
-    const whoami = await runMcpCommand('whoami && echo "secret" | su -c whoami', ['--sudoPassword=secret']);
+    const whoami = await runMcpCommand('whoami && echo "secret" | su -c whoami', 'sudo-secret');
     expect(whoami.error).toBeUndefined();
     const output = (whoami.result?.content?.[0]?.text || '').toLowerCase();
     expect(output).toContain('root');
     
     // Now try creating a root-owned directory
-    const mkdir = await runMcpCommand('echo "secret" | su -c "mkdir -p /root/test_dir"', ['--sudoPassword=secret']);
+    const mkdir = await runMcpCommand('echo "secret" | su -c "mkdir -p /root/test_dir"', 'sudo-secret');
     expect(mkdir.error).toBeUndefined();
     
     // Verify we can access it
-    const ls = await runMcpCommand('ls -la /root/test_dir', ['--sudoPassword=secret']);
+    const ls = await runMcpCommand('ls -la /root/test_dir', 'sudo-secret');
     expect(ls.error).toBeUndefined();
     expect(ls.result?.content?.[0]?.text).toBeTruthy();
 
     // Clean up
-    const cleanup = await runMcpCommand('rm -rf /root/test_dir', ['--sudoPassword=secret']);
+    const cleanup = await runMcpCommand('rm -rf /root/test_dir', 'sudo-secret');
     expect(cleanup.error).toBeUndefined();
   }, 60000); // Increased timeout for su operations
 
   it('executes su when provided --suPassword', async () => {
-    const res = await runSuMcpCommand('whoami', 'secret');
+    const res = await runSuMcpCommand('whoami');
     expect(res.error).toBeUndefined();
     const out = (res.result?.content?.[0]?.text || '').toLowerCase();
     expect(out).toContain('root');
@@ -120,20 +118,20 @@ describe('sudo-exec tool authentication', () => {
   });
 
   it('reports empty command as invalid', async () => {
-    const res = await runMcpCommand('', ['--sudoPassword=secret']);
+    const res = await runMcpCommand('', 'sudo-secret');
     const text = (res.result?.content?.[0]?.text || '').toLowerCase();
     expect(text).toContain('command cannot be empty');
   });
 
   it('rejects wrong sudo password', async () => {
-    const res = await runMcpCommand('whoami', ['--sudoPassword=wrongpass']);
+    const res = await runMcpCommand('whoami', 'sudo-wrong');
     const text = (res.result?.content?.[0]?.text || '').toLowerCase();
     // The sshd/sudo stack may return different messages across platforms; look for common indicator
     expect(text).toMatch(/sorry|incorrect|authentication/);
   });
 
   it('executes with correct sudo password', async () => {
-    const res = await runMcpCommand('id', ['--sudoPassword=secret']);
+    const res = await runMcpCommand('id', 'sudo-secret');
     expect(res.error).toBeUndefined();
     const out = (res.result?.content?.[0]?.text || '').toLowerCase();
     expect(out).toContain('uid=0');
